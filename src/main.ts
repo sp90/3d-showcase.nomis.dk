@@ -13,7 +13,7 @@ import {
 } from "three";
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import handleResize from "../../helpers/handleResize";
+import handleResize from "./helpers/handleResize";
 
 const canvas = document.querySelector<HTMLDivElement>("#webgl")!;
 const scene = new Scene();
