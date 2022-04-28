@@ -2,16 +2,13 @@ import "./style.css";
 import {
   AmbientLight,
   BoxGeometry,
-  Clock,
   Color,
   Mesh,
-  MeshBasicMaterial,
   MeshLambertMaterial,
   PerspectiveCamera,
   PointLight,
   Scene,
   ShaderMaterial,
-  Vector2,
   WebGLRenderer,
 } from "three";
 
@@ -90,10 +87,10 @@ window.addEventListener("mousemove", (event) => {
 //     : canvas.requestFullscreen();
 // });
 
-const clock = new Clock();
+// const clock = new Clock();
 
 const tick = () => {
-  const elapsedTime = clock.getElapsedTime();
+  // const elapsedTime = clock.getElapsedTime();
 
   // camera.position.x = Math.sin(cursor.x * Math.PI * 2) * 3;
   // camera.position.z = Math.cos(cursor.x * Math.PI * 2) * 3;
