@@ -3,10 +3,13 @@ import {
   AmbientLight,
   BoxGeometry,
   Color,
+  DirectionalLight,
+  DirectionalLightHelper,
   Mesh,
-  MeshLambertMaterial,
+  MeshStandardMaterial,
+  PCFSoftShadowMap,
   PerspectiveCamera,
-  PointLight,
+  PlaneGeometry,
   Scene,
   ShaderMaterial,
   WebGLRenderer,
@@ -14,6 +17,7 @@ import {
 
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import handleResize from "./helpers/handleResize";
+import { loadTextureWithMaps, setRepeatMapping } from "./helpers/loadTextures";
 
 const canvas = document.querySelector<HTMLDivElement>("#webgl")!;
 const scene = new Scene();
@@ -21,8 +25,29 @@ const sceneObjects = [];
 
 const mesh = new Mesh(
   new BoxGeometry(1, 1, 1, 2, 2, 2),
-  new MeshLambertMaterial() // { color: "#ff0000", wireframe: false }
+  new MeshStandardMaterial()
 );
+
+mesh.position.y = 1;
+
+const geometry = new PlaneGeometry(100, 100, 100, 100);
+const material = new MeshStandardMaterial();
+
+const rockMossTexture = await loadTextureWithMaps("Rock_Moss_001");
+
+material.map = setRepeatMapping(rockMossTexture[0], 10, 10);
+material.displacementMap = setRepeatMapping(rockMossTexture[1], 10, 10);
+material.normalMap = setRepeatMapping(rockMossTexture[2], 10, 10);
+material.aoMap = setRepeatMapping(rockMossTexture[3], 10, 10);
+material.roughnessMap = setRepeatMapping(rockMossTexture[4], 10, 10);
+
+material.needsUpdate = true;
+
+const plane = new Mesh(geometry, material);
+
+plane.position.y = -0.5;
+plane.rotation.x = -Math.PI / 2;
+plane.receiveShadow = true;
 
 const sizes = {
   width: window.innerWidth,
@@ -38,28 +63,45 @@ const camera = new PerspectiveCamera(
   100
 );
 
-camera.position.z = 3;
-camera.position.y = 3;
-camera.position.x = 3;
+camera.position.z = 8;
+camera.position.y = 8;
+camera.position.x = 8;
 camera.lookAt(mesh.position);
+
+scene.background = new Color(0x3333ff);
 
 scene.add(camera);
 
 scene.add(mesh);
 sceneObjects.push(mesh);
+scene.add(plane);
+sceneObjects.push(plane);
 
 addExperimentalCube();
 
 let ambientLight = new AmbientLight(0x505050);
-let pointLight = new PointLight(0xdddddd);
-pointLight.position.set(-5, -3, 3);
+let directionalLight = new DirectionalLight(0xffffff, 1);
+directionalLight.castShadow = true;
+directionalLight.position.set(2, 10, 1);
+directionalLight.target.position.set(0, 0, 0);
+//Set up shadow properties for the light
+directionalLight.shadow.mapSize.width = 100; // default
+directionalLight.shadow.mapSize.height = 100; // default
+directionalLight.shadow.camera.near = 0.5; // default
+directionalLight.shadow.camera.far = 500; // default
 
 scene.add(ambientLight);
-scene.add(pointLight);
+scene.add(directionalLight);
+scene.add(directionalLight.target);
+
+// let directionalLightHelper = new DirectionalLightHelper(directionalLight, 5);
+// scene.add(directionalLightHelper);
 
 const controls = new OrbitControls(camera, canvas);
 
 controls.enableDamping = true;
+controls.minPolarAngle = Math.PI / 6; // radians
+controls.maxPolarAngle = Math.PI / 2; // radians
 
 const renderer = new WebGLRenderer({
   canvas,
@@ -68,6 +110,8 @@ const renderer = new WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.render(scene, camera);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = PCFSoftShadowMap;
 
 handleResize(sizes, aspectRatio, camera, renderer);
 
@@ -119,7 +163,10 @@ function addExperimentalCube() {
   });
 
   let mesh = new Mesh(geometry, material);
+
+  mesh.castShadow = true;
   mesh.position.x = 2;
+  mesh.position.y = 1;
   scene.add(mesh);
   sceneObjects.push(mesh);
 }
@@ -145,6 +192,28 @@ function fragmentShader() {
 
     void main() {
       gl_FragColor = vec4(mix(colorA, colorB, vUv.z), 1.0);
+    }
+  `;
+}
+
+function vertexShader1() {
+  return `
+    uniform float time;
+    uniform vec2 resolution;
+    void main()	{
+        gl_Position = vec4( position, 1.0 );
+    }
+  `;
+}
+
+function fragmentShader1() {
+  return `
+    uniform float time;
+    uniform vec2 resolution;
+    void main()	{
+        float x = mod(time + gl_FragCoord.x, 20.) < 10. ? 1. : 0.;
+        float y = mod(time + gl_FragCoord.y, 20.) < 10. ? 1. : 0.;
+        gl_FragColor = vec4(vec3(min(x, y)), 1.);
     }
   `;
 }
