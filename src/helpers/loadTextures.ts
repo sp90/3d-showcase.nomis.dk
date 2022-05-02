@@ -1,10 +1,4 @@
-import {
-  LoadingManager,
-  MeshStandardMaterial,
-  RepeatWrapping,
-  Texture,
-  TextureLoader,
-} from "three";
+import { LoadingManager, RepeatWrapping, Texture, TextureLoader } from "three";
 
 export const loadTextures = (urls: string[], callback: Function) => {
   const textures: Texture[] = [];
